@@ -29,9 +29,9 @@ public:
     void setY(const int &y);
     void setAttribute(const Attribute<T> &attrib);
 
-    int getX();
-    int getY();
-    Attribute<T> getAttribute();
+    int getX() const;
+    int getY() const;
+    Attribute<T> getAttribute() const;
 
     Cell<T> setNeighbor();
 };

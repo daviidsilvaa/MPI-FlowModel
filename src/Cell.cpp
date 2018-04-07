@@ -53,15 +53,15 @@ void Cell<T>::setAttribute(const Attribute<T> &attrib){
 }
 
 template<class T>
-int Cell<T>::getX(){
+int Cell<T>::getX() const{
     return this->x;
 }
 template<class T>
-int Cell<T>::getY(){
+int Cell<T>::getY() const{
     return this->y;
 }
 template<class T>
-Attribute<T> Cell<T>::getAttribute(){
+Attribute<T> Cell<T>::getAttribute() const{
     return this->attribute;
 }
 
