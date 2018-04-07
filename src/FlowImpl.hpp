@@ -20,6 +20,15 @@ public:
     ~FlowImpl();
 
     FlowImpl<T>& operator=(const FlowImpl<T> &flow);
+
+    void setSource(const Cell<T> &source);
+    Cell<T> getSource();
+    void setCountTargets(const int &count_targets);
+    int getCountTargets();
+    void setFlowRate(const double &flow_rate);
+    double getFlowRate();
+    void setLastExecute(const double &last_execute);
+    double getLastExecute();
 };
 
 #endif

@@ -49,5 +49,38 @@ FlowImpl<T>& FlowImpl<T>::operator=(const FlowImpl<T> &flow){
     return *this;
 }
 
+template<class T>
+void FlowImpl<T>::setSource(const Cell<T> &source){
+    this->source = source;
+}
+template<class T>
+Cell<T> FlowImpl<T>::getSource(){
+    return this->source;
+}
+template<class T>
+void FlowImpl<T>::setCountTargets(const int &count_targets){
+    this->count_targets = count_targets;
+}
+template<class T>
+int FlowImpl<T>::getCountTargets(){
+    return this->count_targets;
+}
+template<class T>
+void FlowImpl<T>::setFlowRate(const double &flow_rate){
+    this->flow_rate = flow_rate;
+}
+template<class T>
+double FlowImpl<T>::getFlowRate(){
+    return this->flow_rate;
+}
+template<class T>
+void FlowImpl<T>::setLastExecute(const double &last_execute){
+    this->last_execute = last_execute;
+}
+template<class T>
+double FlowImpl<T>::getLastExecute(){
+    return this->last_execute;
+}
+
 template class FlowImpl<double>;
 template class FlowImpl<int>;
