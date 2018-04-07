@@ -36,7 +36,7 @@ public:
     void setType(const int &type);
     int getType() const;
 
-    void LineScatter(const MPI_Comm &mpi_comm);
+    void lineScatter(const MPI_Comm &mpi_comm);
 };
 
 template<class T>

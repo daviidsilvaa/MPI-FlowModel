@@ -70,7 +70,7 @@ int CellularSpace<T>::getType() const{
 }
 
 template<class T>
-void CellularSpace<T>::LineScatter(const MPI_Comm &mpi_comm){
+void CellularSpace<T>::lineScatter(const MPI_Comm &mpi_comm){
     // seta o tipo do espaco celular
 
     int comm_size, comm_rank, comm_workers, count, offset;
@@ -123,6 +123,5 @@ void CellularSpace<T>::LineScatter(const MPI_Comm &mpi_comm){
     this->setType(LINE);
 }
 
-// "enganando o compilador"
 template class CellularSpace<double>;
 template class CellularSpace<int>;
