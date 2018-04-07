@@ -7,14 +7,14 @@ Attribute<T>::Attribute(){ }
 
 template<class T>
 Attribute<T>::Attribute(const int &key, const T &value){
-    this->SetKey(key);
-    this->SetValue(value);
+    this->setKey(key);
+    this->setValue(value);
 }
 
 template<class T>
 Attribute<T>::Attribute(const Attribute<T> &attrib){
-    this->SetKey(attrib.key);
-    this->SetValue(attrib.value);
+    this->setKey(attrib.key);
+    this->setValue(attrib.value);
 }
 
 template<class T>
@@ -23,31 +23,30 @@ Attribute<T>::~Attribute(){ }
 template<class T>
 Attribute<T>& Attribute<T>::operator=(const Attribute<T> &attribute){
     if(this != &attribute){
-        this->SetKey(attribute.key);
-        this->SetValue(attribute.value);
+        this->setKey(attribute.key);
+        this->setValue(attribute.value);
     }
     return *this;
 }
 
 template<class T>
-int Attribute<T>::GetKey(void){
+int Attribute<T>::getKey(void){
     return this->key;
 }
 template<class T>
-void Attribute<T>::SetKey(const int &key){
+void Attribute<T>::setKey(const int &key){
     this->key = key;
 }
 
 template<class T>
-T Attribute<T>::GetValue(void){
+T Attribute<T>::getValue(void){
     return this->value;
 }
 template<class T>
-void Attribute<T>::SetValue(const T &value){
+void Attribute<T>::setValue(const T &value){
     this->value = value;
 }
 
-// "enganando o compilador"
 template class Attribute<double>;
 template class Attribute<int>;
 

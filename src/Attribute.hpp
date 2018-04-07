@@ -21,11 +21,11 @@ public:
 
     Attribute<T>& operator=(const Attribute<T> &attribute);
 
-	int GetKey(void);
-	void SetKey(const int &key);
+	int getKey(void);
+	void setKey(const int &key);
 
-	T GetValue(void);
-	void SetValue(const T &value);
+	T getValue(void);
+	void setValue(const T &value);
 };
 
 template<class T>
