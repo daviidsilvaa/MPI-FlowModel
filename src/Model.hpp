@@ -24,11 +24,11 @@ public:
 
     void addFlow(FlowImpl<T> *flow);
 
-    double execute(const MPI_Comm &mpi_comm, const CellularSpace<T> &cellular_space);
+    double execute(const MPI_Comm &mpi_comm, CellularSpace<T> *cs);
 
 private:
-    double executeLine(const MPI_Comm &mpi_comm, const CellularSpace<T> &cellular_space);
-    double executeRectangular(const MPI_Comm &mpi_comm, const CellularSpace<T> &cellular_space);
+    double executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs);
+    double executeRectangular(const MPI_Comm &mpi_comm, CellularSpace<T> *cs);
 };
 
 #endif
