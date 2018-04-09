@@ -11,6 +11,7 @@ CellularSpace<T>::CellularSpace(const int &height, const int &width){
     this->y_init = 0;
     this->width = width;
     this->height = height;
+    this->memoria = std::vector<Cell<T> >(height*width);
 }
 
 template<class T>
@@ -19,6 +20,7 @@ CellularSpace<T>::CellularSpace(const int &x_init, const int &y_init, const int 
     this->y_init = y_init;
     this->width = width;
     this->height = height;
+    this->memoria = std::vector<Cell<T> >(height*width);
 }
 
 template<class T>
@@ -29,7 +31,7 @@ void CellularSpace<T>::setXInit(const int &x_init){
     this->x_init = x_init;
 }
 template<class T>
-int CellularSpace<T>::getXInit() const{
+int CellularSpace<T>::getXInit(){
     return this->x_init;
 }
 
@@ -38,7 +40,7 @@ void CellularSpace<T>::setYInit(const int &x_init){
     this->y_init = y_init;
 }
 template<class T>
-int CellularSpace<T>::getYInit() const{
+int CellularSpace<T>::getYInit(){
     return this->y_init;
 }
 
@@ -47,7 +49,7 @@ void CellularSpace<T>::setHeight(const int &height){
     this->height = height;
 }
 template<class T>
-int CellularSpace<T>::getHeight() const{
+int CellularSpace<T>::getHeight(){
     return this->height;
 }
 
@@ -56,7 +58,7 @@ void CellularSpace<T>::setWidth(const int &width){
     this->width = width;
 }
 template<class T>
-int CellularSpace<T>::getWidth() const{
+int CellularSpace<T>::getWidth(){
     return this->width;
 }
 
@@ -65,7 +67,7 @@ void CellularSpace<T>::setType(const int &type){
     this->type = type;
 }
 template<class T>
-int CellularSpace<T>::getType() const{
+int CellularSpace<T>::getType(){
     return this->type;
 }
 
@@ -73,7 +75,7 @@ template<class T>
 void CellularSpace<T>::lineScatter(const MPI_Comm &mpi_comm){
     // seta o tipo do espaco celular
 
-    int comm_size, comm_rank, comm_workers, count, offset;
+    int comm_size, comm_rank, comm_workers, offset;
 
     MPI_Comm_size(mpi_comm, &comm_size);
     MPI_Comm_rank(mpi_comm, &comm_rank);
@@ -82,21 +84,25 @@ void CellularSpace<T>::lineScatter(const MPI_Comm &mpi_comm){
 
     comm_workers = comm_size - 1;
 
+
     if(comm_rank == 0){
-        count = (this->getHeight()*this->getWidth())/comm_workers;
         offset = 0;
         int x_init_s, y_init_s, height_s, width_s;
         int index[comm_size];
         char word_cs_send[23];
 
+        int num_workers = comm_size - 1;
+
         // para cada maquina { crie uma regiao (i.e.linhas) do espaço celular }
-        for(int dest = 1; dest <= comm_size-1; dest++){
+        for(int dest = 1; dest <= num_workers; dest++){
             sprintf(word_cs_send, "%d|%d:%d|%d",
-            offset/this->getWidth(), this->getYInit(), this->getHeight()/comm_workers, this->getWidth());
+            offset, this->getYInit(), this->getHeight(), this->getWidth());
             MPI_Send(word_cs_send, 23, MPI_CHAR, dest, FROM_MASTER, MPI_COMM_WORLD);
-            offset = offset + count;
+            offset = offset + this->getHeight();
             index[dest]= offset;
         }
+
+        this->memoria = std::vector<Cell<T> >(0);
     } else {
         char word_cs_recv[23], word_execute_recv[23];
 
@@ -116,7 +122,7 @@ void CellularSpace<T>::lineScatter(const MPI_Comm &mpi_comm){
         // cria as celulas dentro de cada espaco celular
         for(int i = 0; i < (this->getHeight() * this->getWidth()); i++){
             this->memoria[i] = Cell<T>((this->getXInit() + (i/this->getWidth())), (i%this->getWidth()), Attribute<T>(i, 1));
-            this->memoria[i] = this->memoria[i].setNeighbor();
+            this->memoria[i] = this->memoria[i].setNeighbor(height_s*(comm_size-1), width_s);
         }
     }
 

@@ -53,20 +53,20 @@ void Cell<T>::setAttribute(const Attribute<T> &attrib){
 }
 
 template<class T>
-int Cell<T>::getX() const{
+int Cell<T>::getX(){
     return this->x;
 }
 template<class T>
-int Cell<T>::getY() const{
+int Cell<T>::getY(){
     return this->y;
 }
 template<class T>
-Attribute<T> Cell<T>::getAttribute() const{
+Attribute<T> Cell<T>::getAttribute(){
     return this->attribute;
 }
 
 template<class T>
-Cell<T> Cell<T>::setNeighbor(){
+Cell<T> Cell<T>::setNeighbor(const int &height, const int &width){
     Cell<T> cell = *this;
 
     if(cell.x == 0){
@@ -76,14 +76,15 @@ Cell<T> Cell<T>::setNeighbor(){
             cell.neighbors[1] = cell.x + 1;  cell.neighbors[NEIGHBORS + 1] = cell.y + 1;
             cell.neighbors[2] = cell.x + 1;  cell.neighbors[NEIGHBORS + 2] = cell.y;
             return cell;
-        }if(cell.y == DIMY-1){
+        }
+        if(cell.y == width-1){
             cell.count_neighbors = 3;
             cell.neighbors[0] = cell.x;      cell.neighbors[NEIGHBORS + 0] = cell.y - 1;
             cell.neighbors[1] = cell.x + 1;  cell.neighbors[NEIGHBORS + 1] = cell.y - 1;
             cell.neighbors[2] = cell.x + 1;  cell.neighbors[NEIGHBORS + 2] = cell.y;
             return cell;
         }
-        if(cell.y != DIMY-1 && cell.y != 0){
+        if(cell.y != width-1 && cell.y != 0){
             cell.count_neighbors = 5;
             cell.neighbors[0] = cell.x;      cell.neighbors[NEIGHBORS + 0] = cell.y + 1;
             cell.neighbors[1] = cell.x + 1;  cell.neighbors[NEIGHBORS + 1] = cell.y + 1;
@@ -93,7 +94,7 @@ Cell<T> Cell<T>::setNeighbor(){
             return cell;
         }
     }
-    if(cell.x == DIMX-1){
+    if(cell.x == height-1){
         if(cell.y == 0){
             cell.count_neighbors = 3;
             cell.neighbors[0] = cell.x - 1;  cell.neighbors[NEIGHBORS + 0] = cell.y;
@@ -101,14 +102,14 @@ Cell<T> Cell<T>::setNeighbor(){
             cell.neighbors[2] = cell.x;      cell.neighbors[NEIGHBORS + 2] = cell.y + 1;
             return cell;
         }
-        if(cell.y == DIMY-1){
+        if(cell.y == width-1){
             cell.count_neighbors = 3;
             cell.neighbors[0] = cell.x - 1;  cell.neighbors[NEIGHBORS + 0] = cell.y;
             cell.neighbors[1] = cell.x - 1;  cell.neighbors[NEIGHBORS + 1] = cell.y - 1;
             cell.neighbors[2] = cell.x;      cell.neighbors[NEIGHBORS + 2] = cell.y - 1;
             return cell;
         }
-        if(cell.y != DIMY-1 && cell.y != 0){
+        if(cell.y != width-1 && cell.y != 0){
             cell.count_neighbors = 5;
             cell.neighbors[0] = cell.x;      cell.neighbors[NEIGHBORS + 0] = cell.y + 1;
             cell.neighbors[1] = cell.x - 1;  cell.neighbors[NEIGHBORS + 1] = cell.y + 1;
@@ -119,7 +120,7 @@ Cell<T> Cell<T>::setNeighbor(){
         }
     }
     if(cell.y == 0){
-        if((cell.x != 0) && (cell.x != DIMX-1)){
+        if((cell.x != 0) && (cell.x != height-1)){
             cell.count_neighbors = 5;
             cell.neighbors[0] = cell.x - 1;  cell.neighbors[NEIGHBORS + 0] = cell.y;
             cell.neighbors[1] = cell.x - 1;  cell.neighbors[NEIGHBORS + 1] = cell.y + 1;
@@ -129,8 +130,8 @@ Cell<T> Cell<T>::setNeighbor(){
             return cell;
         }
     }
-    if(cell.y == DIMY-1){
-        if((cell.x != 0) && (cell.x != DIMX-1)){
+    if(cell.y == width-1){
+        if((cell.x != 0) && (cell.x != height-1)){
             cell.count_neighbors = 5;
             cell.neighbors[0] = cell.x - 1;  cell.neighbors[NEIGHBORS + 0] = cell.y;
             cell.neighbors[1] = cell.x - 1;  cell.neighbors[NEIGHBORS + 1] = cell.y - 1;
@@ -140,7 +141,7 @@ Cell<T> Cell<T>::setNeighbor(){
             return cell;
         }
     }
-    if(cell.x > 0 && cell.x < DIMX-1 && cell.y > 0 && cell.y < DIMY-1){
+    if(cell.x > 0 && cell.x < height-1 && cell.y > 0 && cell.y < width-1){
         cell.count_neighbors = 8;
         cell.neighbors[0] = cell.x - 1;  cell.neighbors[NEIGHBORS + 0] = cell.y;
         cell.neighbors[1] = cell.x - 1;  cell.neighbors[NEIGHBORS + 1] = cell.y - 1;

@@ -29,11 +29,11 @@ public:
     void setY(const int &y);
     void setAttribute(const Attribute<T> &attrib);
 
-    int getX() const;
-    int getY() const;
-    Attribute<T> getAttribute() const;
+    int getX();
+    int getY();
+    Attribute<T> getAttribute();
 
-    Cell<T> setNeighbor();
+    Cell<T> setNeighbor(const int &height, const int &width);
 };
 
 // template<typename T>
