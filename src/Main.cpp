@@ -26,11 +26,15 @@ int main(int argc, char *argv[]){
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-	Attribute<double> attrib = Attribute<double>(1, 0.2);
-	Cell<double> cell = Cell<double>(19, 5, attrib);
-	CellularSpace<double> cs = CellularSpace<double>(20, 40);
+	Attribute<double> attrib = Attribute<double>(1, 1);
+	Cell<double> cell = Cell<double>(4, 9, attrib);
+	CellularSpace<double> *cs = new CellularSpace<double>(5, 10);
 
-	cs.LineScatter(MPI_COMM_WORLD);
+	cs->lineScatter(MPI_COMM_WORLD);
+
+	// if(comm_rank == 0)
+	// 	for(int i = 0; i < cs->getHeight()*cs->getWidth(); i++)
+	// 		cout << cs->memoria[i].getX() << "\t" << cs->memoria[i].getY() << "\t" << cs->memoria[i].count_neighbors << endl;
 
 	FlowImpl<double> *f1 = new FlowExponencial<double>(cell, 0.1);
 
