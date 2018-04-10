@@ -27,21 +27,32 @@ int main(int argc, char *argv[]){
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
 	Attribute<double> attrib = Attribute<double>(1, 1);
-	Cell<double> cell = Cell<double>(4, 9, attrib);
-	CellularSpace<double> *cs = new CellularSpace<double>(5, 10);
+	Cell<double> cell = Cell<double>(4, 5, attrib);
 
-	cs->lineScatter(MPI_COMM_WORLD);
+	// // CellularSpace em linhas
+	// CellularSpace<double> *cs1 = new CellularSpace<double>(5, 10);
+	// Model<double> m1 = Model<double>(0.5, 0.5);
+	//
+	// cs1->scatter(MPI_COMM_WORLD, LINE);
+	//
+	// m1.addFlow(new FlowExponencial<double>(cell, 0.1));
+	// m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 0, attrib), 0.1));
+	// m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 9, attrib), 0.1));
+	//
+	// m1.execute(MPI_COMM_WORLD, cs1);
 
-	// if(comm_rank == 0)
-	// 	for(int i = 0; i < cs->getHeight()*cs->getWidth(); i++)
-	// 		cout << cs->memoria[i].getX() << "\t" << cs->memoria[i].getY() << "\t" << cs->memoria[i].count_neighbors << endl;
 
-	FlowImpl<double> *f1 = new FlowExponencial<double>(cell, 0.1);
+	// CellularSpace em retangulos
+	CellularSpace<double> *cs2 = new CellularSpace<double>(5, 10);
+	Model<double> m2 = Model<double>(0.5, 0.5);
 
-	Model<double> m1 = Model<double>(0.5, 0.5);
+	cs2->scatter(MPI_COMM_WORLD, RECTANGULAR);
 
-	m1.addFlow(f1);
-	m1.execute(MPI_COMM_WORLD, cs);
+	// m2.addFlow(new FlowExponencial<double>(cell, 0.1));
+	// m2.addFlow(new FlowExponencial<double>(Cell<double>(4, 0, attrib), 0.1));
+	// m2.addFlow(new FlowExponencial<double>(Cell<double>(4, 9, attrib), 0.1));
+	//
+	// m2.execute(MPI_COMM_WORLD, cs2);
 
 	MPI_Finalize();
 
