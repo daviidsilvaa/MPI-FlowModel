@@ -3,7 +3,6 @@
 #define CELLULARSPACE_HPP
 
 #include "Cell.hpp"
-#include "Defines.hpp"
 #include <vector>
 
 #define LINE 0
@@ -37,7 +36,11 @@ public:
     int getWidth();
     int getType();
 
+    void scatter(const MPI_Comm &mpi_comm, const int &type);
+
+private:
     void lineScatter(const MPI_Comm &mpi_comm);
+    void rectangularScatter(const MPI_Comm &mpi_comm);
 };
 
 template<class T>
