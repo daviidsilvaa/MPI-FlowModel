@@ -34,6 +34,7 @@ public:
     int getYInit();
     int getHeight();
     int getWidth();
+    int getSize();
     int getType();
 
     void scatter(const MPI_Comm &mpi_comm, const int &type);

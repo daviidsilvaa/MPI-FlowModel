@@ -64,6 +64,11 @@ int CellularSpace<T>::getWidth(){
 }
 
 template<class T>
+int CellularSpace<T>::getSize(){
+    return this->memoria.size();
+}
+
+template<class T>
 void CellularSpace<T>::setType(const int &type){
     this->type = type;
 }
@@ -113,6 +118,7 @@ void CellularSpace<T>::lineScatter(const MPI_Comm &mpi_comm){
             index[dest]= offset;
         }
 
+        // this->height = this->width = 0;
         this->memoria = std::vector<Cell<T> >(0);
     } else {
         char word_cs_recv[23], word_execute_recv[23];
