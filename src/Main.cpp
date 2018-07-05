@@ -39,11 +39,19 @@ int main(int argc, char *argv[]){
 	}
 
 	// m1.addFlow(new FlowExponencial<double>(cell, 0.1));
+
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 0, attrib), 0.1));
+	if(comm_rank == 0) cout << "f1.execute() OK" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 9, attrib), 0.1));
+	if(comm_rank == 0) cout << "f2.execute() OK" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 0, attrib), 0.1));
+	if(comm_rank == 0) cout << "f3.execute() OK" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 9, attrib), 0.1));
+	if(comm_rank == 0) cout << "f4.execute() OK" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 5, attrib), 0.1));
+	if(comm_rank == 0) cout << "f5.execute() OK" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 5, attrib), 0.1));
+	if(comm_rank == 0) cout << "f6.execute() OK" << endl;
 
 	m1.execute(MPI_COMM_WORLD, cs1);
 
@@ -51,10 +59,6 @@ int main(int argc, char *argv[]){
 	for(int i = 0; i < cs1->getSize(); i++){
 		sum2 += cs1->memoria[i].attribute.value;
 	}
-
-	// assert para conservacao de fluxo
-	(sum1 == sum2) ? cout << comm_rank << " OK" << endl
-		: cout << comm_rank << " FAILED (" << sum1 << " > " << sum2 << ")"<< endl;
 
 	// CellularSpace em retangulos
 	// CellularSpace<double> *cs2 = new CellularSpace<double>(5, 10);

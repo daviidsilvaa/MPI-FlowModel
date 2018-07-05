@@ -2,7 +2,10 @@
 #include "Model.hpp"
 
 #include <iostream>
+#include <assert.h>
 using namespace std;
+
+#define ASSERT_VALUE 150
 
 template<class T>
 Model<T>::Model(){ }
@@ -90,6 +93,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 MPI_Recv(&word_barrier, 1, MPI_CHAR, dest_, 2000+i, mpi_comm, &mpi_status);
                 MPI_Recv(&word_barrier, 1, MPI_CHAR, rank__, 4000+i, mpi_comm, &mpi_status);
                 cout << "rank " << dest_ << ", " << rank__ << " did execute " << i << endl;
+
+
             } else { // caso a maquina seja SLAYER
 
                 char word_execute_recv[23];
@@ -119,8 +124,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                     if(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].getX() - cs->getXInit() == (cs_height/comm_workers)-1){
 
                         // caso a maquina tenha sucessora, ie, a Cell nao esta na ultima linha do CellularSpace como um todo
-                        //  obs: rank == comm_workers significa ser a ultima maquina
-                        if(rank_ != comm_workers){
+                        //  obs: rank == comm_size-1 significa ser a ultima maquina
+                        if(rank_ != (comm_size-1)){
                             switch(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors){
                                 // caso a Cell esteja no extremo leste ou oeste do CellularSpace
                                 case 5:{
@@ -247,21 +252,22 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                         //     neste caso, nao e' necessario que outra maquina execute fluxo
                         int rank__ = rank_; // enviara' mensagem para a propria maquina
 
-                        count_neighbors_send = 0;
-                        last_execute_send = 0;
-
-                        char word_target_send[23];
-                        sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
-                            last_execute_send, y_send);
-
-                        cout << i << "\t" << comm_rank << "\t" <<__LINE__ << "\t"
-                            << cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors << endl;
+                        // cout << i << "\t" << comm_rank << "\t" <<__LINE__ << "\t"
+                        //     << cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors << endl;
 
                         MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
 
                         switch (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors){
                             case 3:{
                                 Attribute<T> attrib_tmp;
+
+                                char word_target_send[23];
+
+                                count_neighbors_send = 0;
+                                last_execute_send = 0;
+
+                                sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
+                                    last_execute_send, y_send);
 
                                 last_execute_send = this->flows[i]->getLastExecute()/cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors;
 
@@ -270,42 +276,50 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                     MPI_Send(&word_target_send, 23, MPI_CHAR, dest_, i, MPI_COMM_WORLD);
                                 }
 
-                                count_neighbors_send = 2;
-
                                 // incrementando valor nas celulas vizinhas na mesma maquina
                                 if(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].x == 0){
-                                    for(int j = 0; j < count_neighbors_send; j++){
-                                        for(int l = 0; l < count_neighbors_send; l++){
-                                            if(cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].x != j
-                                            && cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].y != l){
-                                                attrib_tmp = cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].getAttribute();
-                                                attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
-                                                cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].setAttribute(attrib_tmp);
-                                            }
-                                        }
-                                    }
+                                    attrib_tmp = cs->memoria[(x_)*cs->getWidth() + y_+1 - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_)*cs->getWidth() + y_+1 - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                    attrib_tmp = cs->memoria[(x_+1)*cs->getWidth() + y_ - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_+1)*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                    attrib_tmp = cs->memoria[(x_+1)*cs->getWidth() + y_+1 - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_+1)*cs->getWidth() + y_+1 - cs->getXInit()].setAttribute(attrib_tmp);
                                 }else{
-                                    for(int j = 0; j < count_neighbors_send; j++){
-                                        for(int l = 0; l < count_neighbors_send; l++){
-                                            if(cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].x != j
-                                            && cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].y != l){
-                                                attrib_tmp = cs->memoria[(x_+j)*cs->getWidth() + y_-1+l - cs->getXInit()].getAttribute();
-                                                attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
-                                                cs->memoria[(x_+j)*cs->getWidth() + y_-1+l - cs->getXInit()].setAttribute(attrib_tmp);
-                                            }
-                                        }
-                                    }
+                                    attrib_tmp = cs->memoria[(x_)*cs->getWidth() + y_-1 - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_)*cs->getWidth() + y_-1 - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                    attrib_tmp = cs->memoria[(x_+1)*cs->getWidth() + y_ - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_+1)*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                    attrib_tmp = cs->memoria[(x_+1)*cs->getWidth() + y_-1 - cs->getXInit()].getAttribute();
+                                    attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+                                    cs->memoria[(x_+1)*cs->getWidth() + y_-1 - cs->getXInit()].setAttribute(attrib_tmp);
                                 }
 
                                 // decremetando valor na celula source
                                 attrib_tmp = (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()]).getAttribute();
-                                attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute() - last_execute_send);
+                                attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
 
                             } break; // fim case 3
 
-                            case 0:{
+                            case 8:{
                                 Attribute<T> attrib_tmp;
+
+                                cout << i << " " << __LINE__ << endl;
+                                char word_target_send[23];
+
+                                count_neighbors_send = 0;
+                                last_execute_send = 0;
+                                sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
+                                    last_execute_send, y_send);
 
                                 last_execute_send = this->flows[i]->getLastExecute()/cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors;
 
@@ -332,7 +346,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
                                 // decremetando valor na celula source
                                 attrib_tmp = (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()]).getAttribute();
-                                attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute() - last_execute_send);
+                                attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
                             } break; // fim case 8
                         } // fim switch
@@ -378,6 +392,33 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
             }
         }
     }
+
+    // assert() de conservacao de fluxo
+    if(comm_rank == MASTER){
+        // para cada maquina, MASTER requisita o somatorio resultante das execucoes
+
+        T temp, acumulated_value_recv = 0;
+        for(int source = 1; source < comm_size; source++){
+            MPI_Recv(&temp, 1, ConvertType(getAbstractionDataType<T>()), source, source, MPI_COMM_WORLD, &mpi_status);
+            acumulated_value_recv += temp;
+            cout << "acumulado " << source << ": " << acumulated_value_recv << "\t" << __LINE__ << endl;
+        }
+
+        // verifica se os valores simulados foram conservados
+        assert((acumulated_value_recv - ASSERT_VALUE) < 0.001);
+
+    } else {
+        // calcula o somatorio dos valores atributos resultante na particao do espaco celular
+        T acumulated_value_send = 0;
+
+        for(int i = 0; i < cs->getHeight()*cs->getWidth(); i++){
+            acumulated_value_send += cs->memoria[i].attribute.value;
+        }
+
+        // envia o valor somado para o MASTER, para que o assert() seja feito
+        MPI_Send(&acumulated_value_send, 1, ConvertType(getAbstractionDataType<T>()), MASTER, comm_rank, MPI_COMM_WORLD);
+    }
+
 }
 template<class T>
 double Model<T>::executeRectangular(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
