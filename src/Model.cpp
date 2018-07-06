@@ -42,6 +42,11 @@ void Model<T>::addFlow(FlowImpl<T> *flow){
 }
 
 template<class T>
+void Model<T>::eraseFlows(){
+    this->flows.erase(this->flows.begin(), this->flows.end());
+}
+
+template<class T>
 double Model<T>::execute(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
     switch(cs->type){
@@ -92,7 +97,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 // recebe a confirmacao de final de execucao
                 MPI_Recv(&word_barrier, 1, MPI_CHAR, dest_, 2000+i, mpi_comm, &mpi_status);
                 MPI_Recv(&word_barrier, 1, MPI_CHAR, rank__, 4000+i, mpi_comm, &mpi_status);
-                cout << "rank " << dest_ << ", " << rank__ << " did execute " << i << endl;
+                // cout << "rank " << dest_ << ", " << rank__ << " did execute " << i << endl;
 
 
             } else { // caso a maquina seja SLAYER
@@ -112,7 +117,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
                 // se a maquina for a que armazena a celula a ser fluxionada, ela executa o fluxo
                 if(comm_rank == rank_){
-
+                
                     this->flows[i]->setLastExecute(this->flows[i]->execute());
 
                     int count_neighbors_send, y_send;
@@ -250,21 +255,26 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                         } // fim if(rank != comm_workers)
                     } else { // caso Cell source nao esteja na ultima linha do CellularSpace armazenado na maquina
                         //     neste caso, nao e' necessario que outra maquina execute fluxo
-                        int rank__ = rank_; // enviara' mensagem para a propria maquina
+                        
 
                         // cout << i << "\t" << comm_rank << "\t" <<__LINE__ << "\t"
                         //     << cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors << endl;
-
-                        MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
-
+                        
+                        if(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors == 0){
+                        	cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors = 8;
+                        }
+                        
                         switch (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors){
                             case 3:{
                                 Attribute<T> attrib_tmp;
 
                                 char word_target_send[23];
 
+								int rank__ = rank_; // enviara' mensagem para a propria maquina
                                 count_neighbors_send = 0;
                                 last_execute_send = 0;
+                                
+                                MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
 
                                 sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
                                     last_execute_send, y_send);
@@ -309,20 +319,75 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
 
                             } break; // fim case 3
-
-                            case 8:{
+                            
+                            case 5:{
                                 Attribute<T> attrib_tmp;
-
-                                cout << i << " " << __LINE__ << endl;
+                                
                                 char word_target_send[23];
-
+                                
+                                int rank__ = rank_;
+                                
                                 count_neighbors_send = 0;
                                 last_execute_send = 0;
                                 sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
                                     last_execute_send, y_send);
 
                                 last_execute_send = this->flows[i]->getLastExecute()/cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors;
+								
+                                MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
 
+                                // envia palavra "fake" com count_neighbors_send = 0, ou seja, nao havera execucao de fluxo fora daqui
+                                for(int dest_ = 1; dest_ <= comm_workers; dest_++){
+                                    MPI_Send(&word_target_send, 23, MPI_CHAR, dest_, i, MPI_COMM_WORLD);
+                                }
+
+                                count_neighbors_send = 3;
+
+                                // incrementando valor nas celulas vizinhas na mesma maquina
+                                
+                                if(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].x == 0){
+                                	for(int j = 0; j < count_neighbors_send; j++){
+                                    	for(int l = 0; l < (count_neighbors_send-1); l++){
+		                                    if(!(j == 1 && l == 0)){
+		                                        attrib_tmp = cs->memoria[(x_-1+j)*cs->getWidth() + y_+l - cs->getXInit()].getAttribute();
+		                                        attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+		                                        cs->memoria[(x_-1+j)*cs->getWidth() + y_+l - cs->getXInit()].setAttribute(attrib_tmp);
+                                        	}
+                                    	}
+                                	}	
+                                } else {
+                                	for(int j = 0; j < count_neighbors_send; j++){
+                                    	for(int l = 0; l < (count_neighbors_send-1); l++){
+		                                    if(!(j == 1 && l == 1)){
+		                                        attrib_tmp = cs->memoria[(x_-1+j)*cs->getWidth() + y_-1+l - cs->getXInit()].getAttribute();
+		                                        attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
+		                                        cs->memoria[(x_-1+j)*cs->getWidth() + y_-1+l - cs->getXInit()].setAttribute(attrib_tmp);
+		                                    }
+		                                }
+		                            }	
+                                }
+                                
+
+                                // decremetando valor na celula source
+                                attrib_tmp = (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()]).getAttribute();
+                                attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
+                                cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
+                            } break; // fim case 5
+                            
+                            case 8:{
+                                Attribute<T> attrib_tmp;
+                                
+                                char word_target_send[23];
+                                
+                                int rank__ = rank_;
+                                
+                                count_neighbors_send = 0;
+                                last_execute_send = 0;
+                                sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
+                                    last_execute_send, y_send);
+
+                                last_execute_send = this->flows[i]->getLastExecute()/cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors;
+								
                                 MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
 
                                 // envia palavra "fake" com count_neighbors_send = 0, ou seja, nao havera execucao de fluxo fora daqui
@@ -335,8 +400,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 // incrementando valor nas celulas vizinhas na mesma maquina
                                 for(int j = 0; j < count_neighbors_send; j++){
                                     for(int l = 0; l < count_neighbors_send; l++){
-                                        if(cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].x != j
-                                        && cs->memoria[(x_+j)*cs->getWidth() + y_+l - cs->getXInit()].y != l){
+                                        if(!(i == 1 && j == 1)){
                                             attrib_tmp = cs->memoria[(x_-1+j)*cs->getWidth() + y_-1+l - cs->getXInit()].getAttribute();
                                             attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_send);
                                             cs->memoria[(x_-1+j)*cs->getWidth() + y_-1+l - cs->getXInit()].setAttribute(attrib_tmp);
@@ -349,6 +413,25 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
                             } break; // fim case 8
+                            
+                            default:{
+                            	cout << __FILE__ << " LINE " << __LINE__ << endl;
+                            	
+                            	char word_target_send[23];
+                            	int rank__ = rank_;
+                                
+                                count_neighbors_send = 0;
+                                last_execute_send = 0;
+                                sprintf(word_target_send, "%d|%d|%lf|%d", rank__, count_neighbors_send,
+                                    last_execute_send, y_send);
+								
+                                MPI_Send(&rank__, 1, MPI_INT, MASTER, 1000+i, MPI_COMM_WORLD);
+
+                                // envia palavra "fake" com count_neighbors_send = 0, ou seja, nao havera execucao de fluxo fora daqui
+                                for(int dest_ = 1; dest_ <= comm_workers; dest_++){
+                                    MPI_Send(&word_target_send, 23, MPI_CHAR, dest_, i, MPI_COMM_WORLD);
+                                }
+							} break; // fim default
                         } // fim switch
 
                         char word_barrier = 't';
@@ -364,7 +447,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
                 MPI_Recv(word_target_recv, 23, MPI_CHAR, rank_, i, MPI_COMM_WORLD, &mpi_status);
 
-                // cout << "rank " << comm_rank << " word_execute_recv " << word_execute_recv << endl;
+                // cout << i << " rank " << comm_rank << " word_execute_recv " << word_execute_recv << endl;
                 rank_c = strtok(word_target_recv, "|");
                 char *count_c = strtok(NULL, "|");
                 char *last_execute_c = strtok(NULL, "|");
@@ -378,7 +461,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 // cout << " - " << comm_rank << endl;
 
                 if(comm_rank == rank__){
-                    cout << "rank " << comm_rank << " last_execute_recv " << last_execute_recv << endl;
+                    // cout << "rank " << comm_rank << " last_execute_recv " << last_execute_recv << endl;
                     for(int j = 0; j < count_neighbors_recv; j++){
                         attrib_tmp = cs->memoria[y_recv + j].getAttribute();
                         attrib_tmp.setValue(attrib_tmp.getValue() + last_execute_recv);

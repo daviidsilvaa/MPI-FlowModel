@@ -23,6 +23,7 @@ public:
     ~Model();
 
     void addFlow(FlowImpl<T> *flow);
+    void eraseFlows();
 
     double execute(const MPI_Comm &mpi_comm, CellularSpace<T> *cs);
 
