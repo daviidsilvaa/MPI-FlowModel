@@ -41,17 +41,36 @@ int main(int argc, char *argv[]){
 	// m1.addFlow(new FlowExponencial<double>(cell, 0.1));
 
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 0, attrib), 0.1));
-	if(comm_rank == 0) cout << "f1.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f1 adicionado" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 9, attrib), 0.1));
-	if(comm_rank == 0) cout << "f2.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f2 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(9, 0, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f3 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(9, 9, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f4 adicionado" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 0, attrib), 0.1));
-	if(comm_rank == 0) cout << "f3.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f5 adicionado" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 9, attrib), 0.1));
-	if(comm_rank == 0) cout << "f4.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f6 adicionado" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 5, attrib), 0.1));
-	if(comm_rank == 0) cout << "f5.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f7 adicionado" << endl;
 	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 5, attrib), 0.1));
-	if(comm_rank == 0) cout << "f6.execute() OK" << endl;
+	// if(comm_rank == 0) cout << "f8 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 5, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f9 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 0, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f10 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 9, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f11 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 0, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f12 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 9, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f13 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 0, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f14 adicionado" << endl;
+	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 9, attrib), 0.1));
+	// if(comm_rank == 0) cout << "f15 adicionado" << endl;
+	
 
 	m1.execute(MPI_COMM_WORLD, cs1);
 
