@@ -3,8 +3,15 @@
 #include "CellularSpace.hpp"
 #include "FlowImpl.hpp"
 #include "Model.hpp"
+#include "Assert.hpp"
+#include "Time.hpp"
 #include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <iomanip>
 using namespace std;
+
+#define N_F 1000
 
 template<typename T>
 class FlowExponencial : public FlowImpl<T>{
@@ -26,58 +33,52 @@ int main(int argc, char *argv[]){
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-	Attribute<double> attrib = Attribute<double>(1, 1);
-	// Cell<double> cell = Cell<double>(4, 0, attrib);
-	Model<double> m1 = Model<double>(0.5, 0.5);
-	// CellularSpace em linhas
-	CellularSpace<double> *cs1 = new CellularSpace<double>(5, 10);
+	ifstream file;
+	int i_a, i_b;
+	double d_a, d_b;
+
+	file.open(argv[1]);
+
+	file >> d_a;
+	file >> d_b;
+	Model<double> m1 = Model<double>(d_a, d_b);
+
+	file >> i_a;
+	file >> i_b;
+	CellularSpace<double> *cs1 = new CellularSpace<double>(i_a, i_b);
+
+	Time t1 = Time();
+	t1.getInit();
 	cs1->scatter(MPI_COMM_WORLD, LINE);
-
-	double sum1 = 0;
-	for(int i = 0; i < cs1->getSize(); i++){
-		sum1 += cs1->memoria[i].attribute.value;
+	t1.getFinish();
+	if(comm_rank == MASTER){
+		cout << setprecision(10) << "tresp:\t" << t1.getTotalTime() << endl;
 	}
 
-	// m1.addFlow(new FlowExponencial<double>(cell, 0.1));
+	file >> i_a;
+	file >> i_b;
+	Attribute<double> attrib = Attribute<double>(i_a, i_b);
 
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f1 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(4, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f2 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(9, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f3 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(9, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f4 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f5 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(0, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f6 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 5, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f7 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 5, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f8 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 5, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f9 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f10 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(3, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f11 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f12 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(7, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f13 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 0, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f14 adicionado" << endl;
-	m1.addFlow(new FlowExponencial<double>(Cell<double>(12, 9, attrib), 0.1));
-	// if(comm_rank == 0) cout << "f15 adicionado" << endl;
-	
+	for(int i = 0; i < atoi(argv[2]); i++){
+		file >> i_a;
+		file >> i_b;
+		file >> d_a;
+		m1.addFlow(new FlowExponencial<double>(Cell<double>(i_a, i_b, attrib), d_a));
+	}
 
+	Time t2 = Time();
+	t2.getInit();
 	m1.execute(MPI_COMM_WORLD, cs1);
-
-	double sum2 = 0;
-	for(int i = 0; i < cs1->getSize(); i++){
-		sum2 += cs1->memoria[i].attribute.value;
+	t2.getFinish();
+	if(comm_rank == MASTER){
+		cout << setprecision(10) << "tservico:\t" << t2.getTotalTime() << endl;
 	}
+
+	bool bool_value;
+
+	assert(MPI_COMM_WORLD, cs1, 150, &bool_value);
+
+	// if(comm_rank == MASTER) cout << bool_value << endl;
 
 	// CellularSpace em retangulos
 	// CellularSpace<double> *cs2 = new CellularSpace<double>(5, 10);
