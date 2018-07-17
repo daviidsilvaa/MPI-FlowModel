@@ -1,5 +1,6 @@
 
 #include "Model.hpp"
+#include "Time.hpp"
 
 #include <iostream>
 #include <assert.h>
@@ -72,11 +73,16 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
     comm_workers = comm_size - 1;
     int cs_height = cs->getHeight() * comm_workers, cs_width = cs->getWidth();
 
+    double service_time = 0;
+    double wait_time = 0;
+
     // for para tempo de execucao
     for(double t = 0; t < this->time; t = t + this->time_step){
 
         // for para executar cada fluxo
         for(int i = 0; i < this->flows.size(); i++){
+            Time t1 = Time();
+            t1.getInit();
             // caso a maquina seja MASTER
             if(comm_rank == MASTER){
 
@@ -85,6 +91,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 int dest_ = (this->flows[i]->source.x/(cs_height/comm_workers)) + 1;
                 sprintf(word_execute_send, "%d|%d:%d|%lf", dest_, this->flows[i]->source.x, this->flows[i]->source.y, this->flows[i]->getFlowRate());
                 // cout << "rank " << comm_rank << " word_execute_send " << word_execute_send << endl;
+                // cout << i << "\t" << word_execute_send << endl;
 
                 for(int dest = 1; dest <= comm_workers; dest++){
                     MPI_Send(word_execute_send, 23, MPI_CHAR, dest, 3000+i, mpi_comm);
@@ -102,10 +109,13 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
 
             } else { // caso a maquina seja SLAYER
-
                 char word_execute_recv[23];
 
                 MPI_Recv(word_execute_recv, 23, MPI_CHAR, MASTER, 3000+i, mpi_comm, &mpi_status);
+                t1.getFinish();
+
+                wait_time += t1.getTotalTime(); // incrementa tempo de espera
+
                 // cout << "rank " << comm_rank << " word_execute_recv " << word_execute_recv << endl;
                 char *rank_c = strtok(word_execute_recv, "|:");
                 char *x_c = strtok(NULL, ":");
@@ -117,6 +127,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 int flow_rate_ = atoi(flow_rate_c);
 
                 // se a maquina for a que armazena a celula a ser fluxionada, ela executa o fluxo
+                Time t2 = Time();
                 if(comm_rank == rank_){
 
                     this->flows[i]->setLastExecute(this->flows[i]->execute());
@@ -135,6 +146,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                             switch(cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors){
                                 // caso a Cell esteja no extremo leste ou oeste do CellularSpace
                                 case 5:{
+                                    t2.getInit(); // calcula tempo de servico
+
                                     Attribute<T> attrib_tmp;
                                     int rank__ = rank_ + 1;
 
@@ -202,10 +215,13 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                     attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                     cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
 
+                                    t2.getFinish();
+                                    service_time += t2.getTotalTime();
                                 }break; // fim case 5
 
                                 // caso a Cell nao esteja no extremo leste ou oeste do CellularSpace
                                 case 8:{
+                                    t2.getInit();
                                     Attribute<T> attrib_tmp;
                                     int rank__ = rank_ + 1;
 
@@ -245,6 +261,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                     attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                     cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
 
+                                    t2.getFinish();
+                                    service_time += t2.getTotalTime();
                                 }break; // fim case 8
                                 default:
                                 // provavel que tenha !erro!
@@ -263,6 +281,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
 
                         switch (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].count_neighbors){
                             case 3:{
+                                t2.getInit();
                                 Attribute<T> attrib_tmp;
 
                                 char word_target_send[23];
@@ -315,9 +334,12 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
 
+                                t2.getFinish();
+                                service_time += t2.getTotalTime();
                             } break; // fim case 3
 
                             case 5:{
+                                t2.getInit();
                                 Attribute<T> attrib_tmp;
 
                                 char word_target_send[23];
@@ -369,9 +391,13 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 attrib_tmp = (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()]).getAttribute();
                                 attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                t2.getFinish();
+                                service_time += t2.getTotalTime();
                             } break; // fim case 5
 
                             case 8:{
+                                t2.getInit();
                                 Attribute<T> attrib_tmp;
 
                                 char word_target_send[23];
@@ -409,9 +435,13 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 attrib_tmp = (cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()]).getAttribute();
                                 attrib_tmp.setValue(attrib_tmp.getValue() - this->flows[i]->getLastExecute());
                                 cs->memoria[x_*cs->getWidth() + y_ - cs->getXInit()].setAttribute(attrib_tmp);
+
+                                t2.getFinish();
+                                service_time += t2.getTotalTime();
                             } break; // fim case 8
 
                             default:{
+                                t2.getInit();
                             	// cout << i << " " << __FILE__ << " LINE " << __LINE__ << endl;
 
                             	char word_target_send[23];
@@ -428,6 +458,9 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                                 for(int dest_ = 1; dest_ <= comm_workers; dest_++){
                                     MPI_Send(&word_target_send, 23, MPI_CHAR, dest_, i, MPI_COMM_WORLD);
                                 }
+
+                                t2.getFinish();
+                                service_time += t2.getTotalTime();
 							} break; // fim default
                         } // fim switch
 
@@ -435,6 +468,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                         MPI_Send(&word_barrier, 1, MPI_CHAR, MASTER, 2000+i, MPI_COMM_WORLD);
                     }
                 }
+                Time t3 = Time();
+                t3.getInit();
                 int rank__;
                 int count_neighbors_recv, y_recv;
                 T last_execute_recv;
@@ -443,6 +478,8 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 char word_target_recv[23]; // word_target_recv = rank|count|last_execute|y
 
                 MPI_Recv(word_target_recv, 23, MPI_CHAR, rank_, i, MPI_COMM_WORLD, &mpi_status);
+                t3.getFinish();
+                wait_time += t3.getTotalTime();
 
                 // cout << i << " rank " << comm_rank << " word_execute_recv " << word_execute_recv << endl;
                 rank_c = strtok(word_target_recv, "|");
@@ -458,6 +495,7 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                 // cout << " - " << comm_rank << endl;
 
                 if(comm_rank == rank__){
+                    t2.getInit();
                     // cout << "rank " << comm_rank << " last_execute_recv " << last_execute_recv << endl;
                     for(int j = 0; j < count_neighbors_recv; j++){
                         attrib_tmp = cs->memoria[y_recv + j].getAttribute();
@@ -468,9 +506,37 @@ double Model<T>::executeLine(const MPI_Comm &mpi_comm, CellularSpace<T> *cs){
                     // envia confirmacao de final de execucao
                     char word_barrier = 't';
                     MPI_Send(&word_barrier, 1, MPI_CHAR, MASTER, 4000+i, MPI_COMM_WORLD);
+
+                    t2.getFinish();
+                    service_time += t2.getTotalTime();
                 }
             }
         }
+    }
+
+    // calcula a media do tempo de servico e espera entre as maquinas
+    if(comm_rank == MASTER){
+        double service_wait_time_average[comm_workers][2];
+
+        for(int source = 1; source <= comm_workers; source++){
+            MPI_Recv(service_wait_time_average[source-1], 2, MPI_DOUBLE, source, 8000, mpi_comm, &mpi_status);
+        }
+
+        double service_time_average = 0;
+        double wait_time_average = 0;
+
+        for(int i = 0; i < comm_workers; i++){
+            service_time_average += service_wait_time_average[i][0];
+            wait_time_average += service_wait_time_average[i][1];
+        }
+
+        cout << "s_time " << service_time_average << endl;
+        cout << "w_time " << wait_time_average << endl;
+
+    } else {
+        double ser_wai_t_avg[2] = {service_time, wait_time};
+
+        MPI_Send(ser_wai_t_avg, 2, MPI_DOUBLE, MASTER, 8000, MPI_COMM_WORLD);
     }
 }
 

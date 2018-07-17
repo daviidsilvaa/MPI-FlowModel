@@ -51,9 +51,9 @@ int main(int argc, char *argv[]){
 	t1.getInit();
 	cs1->scatter(MPI_COMM_WORLD, LINE);
 	t1.getFinish();
-	if(comm_rank == MASTER){
-		cout << setprecision(10) << t1.getTotalTime() << endl;
-	}
+	// if(comm_rank == MASTER){
+	// 	cout << setprecision(10) << t1.getTotalTime() << endl;
+	// }
 
 	file >> i_a;
 	file >> i_b;
@@ -70,9 +70,9 @@ int main(int argc, char *argv[]){
 	t2.getInit();
 	m1.execute(MPI_COMM_WORLD, cs1);
 	t2.getFinish();
-	if(comm_rank == MASTER){
-		cout << setprecision(10) << t2.getTotalTime() << endl;
-	}
+	// if(comm_rank == MASTER){
+	// 	cout << setprecision(10) << t2.getTotalTime() << endl;
+	// }
 
 	bool bool_value;
 
