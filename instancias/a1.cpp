@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
             case 21: file << 17 << " " << 0 << " " << 0.1 << endl; break;
             case 22: file << 17 << " " << 5 << " " << 0.1 << endl; break;
             // case 23: file << 17 << " " << 9 << " " << 0.1 << endl; break;
-            case 24: file << 19 << " " << 0 << " " << 0.1 << endl; break;
+            // case 24: file << 19 << " " << 0 << " " << 0.1 << endl; break;
             case 25: file << 19 << " " << 5 << " " << 0.1 << endl; break;
             case 26: file << 19 << " " << 9 << " " << 0.1 << endl; break;
             case 27: file << 22 << " " << 0 << " " << 0.1 << endl; break;
